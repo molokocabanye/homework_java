@@ -17,6 +17,5 @@ public class Main {
         for (int i = 0; i < productsArray.length; i++) {
             System.out.println(productsArray[i].getInfo());
         }
-
     }
 }

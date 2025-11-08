@@ -24,8 +24,8 @@ public class Product {
                 ", creationDateTime='" + creationDateTime + '\'' +
                 ", manufacturer='" + manufacturer + '\'' +
                 ", countryOfProduction='" + countryOfProduction + '\'' +
-                ", price='" + price + '\'' +
-                ", status='" + status + '\'' +
+                ", price=" + price +
+                ", status=" + status +
                 '}';
     }
 }

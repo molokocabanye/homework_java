@@ -19,5 +19,9 @@ public class Park {
             this.workingTime = workingTime;
             this.price = price;
         }
+
+        public String getAttractionInfo() {
+            return name + " | " + workingTime + " | " + price + " руб.";
+        }
     }
 }
