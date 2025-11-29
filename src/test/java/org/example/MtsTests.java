@@ -1,64 +1,39 @@
 package org.example;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import io.github.bonigarcia.wdm.WebDriverManager;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
-
 import java.time.Duration;
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 class MtsTest {
+
     private WebDriver driver;
     private WebDriverWait wait;
-    private final String phoneNumber = "297777777";
-    private final String email = "test@example.com";
 
-    // ВАШИ ТОЧНЫЕ XPath
-    private final String paySectionName = "//*[@id=\"pay-section\"]/div/div/div[2]/section/div/h2";
-    private final String paymentLogosContainer = "//*[@id=\"pay-section\"]/div/div/div[2]/section/div/div[2]/ul";
-    private final String visaLogo = "//*[@id=\"pay-section\"]/div/div/div[2]/section/div/div[2]/ul/li[1]/img";
-    private final String verifyByVisaLogo = "//*[@id=\"pay-section\"]/div/div/div[2]/section/div/div[2]/ul/li[2]/img";
-    private final String mastercardLogo = "//*[@id=\"pay-section\"]/div/div/div[2]/section/div/div[2]/ul/li[3]/img";
-    private final String mastercardSecureLogo = "//*[@id=\"pay-section\"]/div/div/div[2]/section/div/div[2]/ul/li[4]/img";
-    private final String belkartLogo = "//*[@id=\"pay-section\"]/div/div/div[2]/section/div/div[2]/ul/li[5]/img";
-    private final String detailsLink = "//*[@id=\"pay-section\"]/div/div/div[2]/section/div/a";
-    private final String servicesOption = "//*[@id=\"pay-section\"]/div/div/div[2]/section/div/div[1]/div[1]/div[2]/ul/li[1]/p";
-    private final String phoneInput = "//*[@id=\"connection-phone\"]";
-    private final String emailInput = "//*[@id=\"connection-email\"]";
-    private final String continueButton = "//*[@id=\"pay-connection\"]/button";
-
-    @BeforeAll
-    static void setupAll() {
-        WebDriverManager.chromedriver().setup();
-    }
+    private final String BASE_URL = "https://www.mts.by";
+    private final String PHONE_NUMBER = "297777777";
+    private final String EMAIL = "test.mail@gmail.com";
+    private final String CHECK_SUM = "100";
 
     @BeforeEach
     void setUp() {
-        ChromeOptions options = new ChromeOptions();
-        options.addArguments("--disable-gpu");
-        options.addArguments("--no-sandbox");
-        options.addArguments("--disable-dev-shm-usage");
-        options.addArguments("--start-maximized");
-
-        driver = new ChromeDriver(options);
+        WebDriverManager.chromedriver().setup();
+        driver = new ChromeDriver();
+        driver.manage().window().maximize();
         wait = new WebDriverWait(driver, Duration.ofSeconds(10));
-        driver.get("https://www.mts.by");
+        driver.get(BASE_URL);
 
-        // Явное ожидание загрузки страницы
-        wait.until(ExpectedConditions.presenceOfElementLocated(By.tagName("body")));
-
-        agreeCookie();
+        WebElement cookieAgreeElement = wait.until(ExpectedConditions.elementToBeClickable(By.id("cookie-agree")));
+        cookieAgreeElement.click();
     }
 
     @AfterEach
@@ -68,148 +43,85 @@ class MtsTest {
         }
     }
 
-    void agreeCookie() {
-        try {
-            List<WebElement> cookieButtons = wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(
-                    By.xpath("//button[contains(@class, 'cookie') or contains(text(), 'Согласиться') or contains(text(), 'Принять')]")
-            ));
-
-            if (!cookieButtons.isEmpty() && cookieButtons.get(0).isDisplayed()) {
-                cookieButtons.get(0).click();
-                // Ожидаем исчезновение куки-баннера
-                wait.until(ExpectedConditions.invisibilityOf(cookieButtons.get(0)));
-            }
-        } catch (Exception e) {
-            System.out.println("Куки уже приняты или не найдены");
-        }
-    }
-
     @Test
-    void testPaySectionName() {
-        System.out.println("ТЕСТ 1: Проверка названия блока");
-
+    public void testPaySectionTitle() {
+        String supposedResult = "Онлайн пополнение\nбез комиссии";
         WebElement sectionTitle = wait.until(ExpectedConditions.visibilityOfElementLocated(
-                By.xpath(paySectionName)
-        ));
+                By.xpath("//*[@id=\"pay-section\"]/div/div/div[2]/section/div/h2")));
 
-        String actualTitle = sectionTitle.getText();
-        String expectedTitle = "Онлайн пополнение\nбез комиссии";
-
-        assertEquals(expectedTitle, actualTitle,
-                "Название блока должно быть: '" + expectedTitle + "'");
-
-        System.out.println("Название блока: '" + actualTitle + "'");
+        assertNotNull(sectionTitle);
+        assertTrue(sectionTitle.isDisplayed(), "Заголовок блока не отображается");
+        assertEquals(supposedResult, sectionTitle.getText());
     }
 
     @Test
-    void testPaymentSystemLogos() {
-        System.out.println("ТЕСТ 2: Проверка наличия логотипов платежных систем");
+    public void testPaySectionValidData()  {
+        WebElement phoneElement = wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("connection-phone")));
+        WebElement sumElement = driver.findElement(By.id("connection-sum"));
+        WebElement emailElement = driver.findElement(By.id("connection-email"));
 
-        // Проверяем контейнер с логотипами
-        WebElement logosContainer = wait.until(ExpectedConditions.visibilityOfElementLocated(
-                By.xpath(paymentLogosContainer)
-        ));
-        assertTrue(logosContainer.isDisplayed(), "Контейнер с логотипами должен быть видимым");
+        assertNotNull(phoneElement);
+        phoneElement.sendKeys(PHONE_NUMBER);
+        sumElement.sendKeys(CHECK_SUM);
+        emailElement.sendKeys(EMAIL);
 
-        // Проверяем все 5 логотипов
-        checkLogoPresence(visaLogo, "Visa");
-        checkLogoPresence(verifyByVisaLogo, "Verify by Visa");
-        checkLogoPresence(mastercardLogo, "MasterCard");
-        checkLogoPresence(mastercardSecureLogo, "MasterCard SecureCode");
-        checkLogoPresence(belkartLogo, "Белкарт");
+        WebElement continueButton = driver.findElement(By.xpath("//*[@id=\"pay-connection\"]/button"));
+        continueButton.click();
 
-        System.out.println("✓ Все 5 логотипов платежных систем присутствуют");
-    }
-
-    private void checkLogoPresence(String xpath, String logoName) {
-        WebElement logo = wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath(xpath)));
-        assertTrue(logo.isDisplayed(), "Логотип " + logoName + " должен быть видимым");
-
-        // Проверяем что логотип загружен
-        String src = logo.getAttribute("src");
-        assertNotNull(src, "Логотип " + logoName + " должен иметь src атрибут");
-        assertFalse(src.isEmpty(), "Логотип " + logoName + " не должен иметь пустой src");
-
-        System.out.println("✓ Логотип " + logoName + " присутствует");
+        WebElement payElement = wait.until(ExpectedConditions.presenceOfElementLocated(By.className("bepaid-app")));
+        assertTrue(payElement.isEnabled());
     }
 
     @Test
-    void testServiceDetailsLink() {
-        System.out.println("ТЕСТ 3: Проверка работы ссылки «Подробнее о сервисе»");
+    public void testButtonMoreAboutService() {
+        String originalUrl = driver.getCurrentUrl();
 
-        WebElement detailsLinkElement = wait.until(ExpectedConditions.elementToBeClickable(
-                By.xpath(detailsLink)
+        WebElement button = driver.findElement(By.xpath(
+                "//*[@id=\"pay-section\"]/div/div/div[2]/section/div/a"
         ));
 
-        assertTrue(detailsLinkElement.isDisplayed(), "Ссылка должна быть видимой");
-        assertTrue(detailsLinkElement.isEnabled(), "Ссылка должна быть кликабельной");
+        button.click();
 
-        String linkText = detailsLinkElement.getText();
-        String expectedText = "Подробнее о сервисе";
-        assertEquals(expectedText, linkText,
-                "Текст ссылки должен быть: '" + expectedText + "'");
-
-        String href = detailsLinkElement.getAttribute("href");
-        assertNotNull(href, "Ссылка должна иметь href атрибут");
-        assertFalse(href.isEmpty(), "Ссылка не должна быть пустой");
-
-        System.out.println("✓ Ссылка '" + linkText + "' работает корректно");
-        System.out.println("✓ URL: " + href);
+        String newUrl = driver.getCurrentUrl();
+        assertNotEquals(originalUrl, newUrl, "URL не изменился после клика");
     }
-
 
     @Test
-    void testPaymentForm() {
-        System.out.println("ТЕСТ 4: Проверка формы оплаты услуг связи");
-
-        // 1. Находим скрытый select элемент
-        WebElement hiddenSelect = wait.until(ExpectedConditions.presenceOfElementLocated(
-                By.xpath("//select")
+    public void testPresenceOfPaySystemLogos() {
+        WebElement visaLogoElement = driver.findElement(By.xpath(
+                "//*[@id=\"pay-section\"]/div/div/div[2]/section/div/div[2]/ul/li[1]/img"
         ));
 
-        // 2. Устанавливаем значение через JavaScript
-        ((org.openqa.selenium.JavascriptExecutor) driver).executeScript(
-                "arguments[0].value = 'connection'; arguments[0].dispatchEvent(new Event('change'));", hiddenSelect);
-        System.out.println("✓ Выбрана опция 'Услуги связи' через JavaScript");
-
-        // 3. Заполняем поле номера телефона
-        WebElement phoneInput = wait.until(ExpectedConditions.elementToBeClickable(
-                By.xpath("//input[@id='connection-phone']")
+        WebElement verifiedByVisaLogoElement = driver.findElement(By.xpath(
+                "//*[@id=\"pay-section\"]/div/div/div[2]/section/div/div[2]/ul/li[2]/img"
         ));
-        phoneInput.clear();
-        phoneInput.sendKeys(phoneNumber);
 
-        String enteredPhone = phoneInput.getAttribute("value");
-        System.out.println("✓ Введен номер телефона: " + enteredPhone);
-
-        // 4. Заполняем поле email
-        WebElement emailInput = wait.until(ExpectedConditions.elementToBeClickable(
-                By.xpath("//input[@id='connection-email']")
+        WebElement masterCardLogoElement = driver.findElement(By.xpath(
+                "//*[@id=\"pay-section\"]/div/div/div[2]/section/div/div[2]/ul/li[3]/img"
         ));
-        emailInput.clear();
-        emailInput.sendKeys(email);
 
-        String enteredEmail = emailInput.getAttribute("value");
-        assertEquals(email, enteredEmail, "Email должен соответствовать введенному");
-        System.out.println("✓ Введен email: " + enteredEmail);
+        WebElement masterCardSecureCodeElement = driver.findElement(By.xpath(
+                "//*[@id=\"pay-section\"]/div/div/div[2]/section/div/div[2]/ul/li[4]/img"
+        ));
 
-        WebElement continueButton = wait.until(ExpectedConditions.elementToBeClickable(
-                By.xpath("//button[contains(text(), 'Продолжить')]")));
+        WebElement belCardElement = driver.findElement(By.xpath(
+                "//*[@id=\"pay-section\"]/div/div/div[2]/section/div/div[2]/ul/li[5]/img"
+        ));
 
-        assertTrue(continueButton.isEnabled(), "Кнопка должна быть активной");
-        System.out.println("✓ Кнопка '" + continueButton.getText().trim() + "' активна");
+        checkLogoPresence(visaLogoElement, "Visa");
 
-        // 5. Нажимаем и проверяем переход
-        String urlBefore = driver.getCurrentUrl();
-        ((org.openqa.selenium.JavascriptExecutor) driver).executeScript("arguments[0].click();", continueButton);
-        System.out.println("✓ Нажата кнопка 'Продолжить'");
-
-        try {
-            wait.until(ExpectedConditions.not(ExpectedConditions.urlToBe(urlBefore)));
-            System.out.println("✓ Успешный переход на следующий шаг");
-        } catch (Exception e) {
-            System.out.println("✓ Форма обработана");
-        }
+        checkLogoPresence(verifiedByVisaLogoElement, "Verified By Visa");
+        checkLogoPresence(masterCardLogoElement, "MasterCard");
+        checkLogoPresence(masterCardSecureCodeElement, "MasterCard Secure Code");
+        checkLogoPresence(belCardElement, "Белкарт");
     }
 
+    private void checkLogoPresence(WebElement element, String name) {
+        String src = element.getAttribute("src");
+        String alt = element.getAttribute("alt");
+
+        assertTrue(element.isDisplayed());
+        assertNotNull(src);
+        assertEquals(name, alt);
+    }
 }
