@@ -199,12 +199,11 @@ class MtsTest {
         assertTrue(continueButton.isEnabled(), "Кнопка должна быть активной");
         System.out.println("✓ Кнопка '" + continueButton.getText().trim() + "' активна");
 
-        // 4. Нажимаем и проверяем переход
+        // 5. Нажимаем и проверяем переход
         String urlBefore = driver.getCurrentUrl();
         ((org.openqa.selenium.JavascriptExecutor) driver).executeScript("arguments[0].click();", continueButton);
         System.out.println("✓ Нажата кнопка 'Продолжить'");
 
-        // Проверяем переход
         try {
             wait.until(ExpectedConditions.not(ExpectedConditions.urlToBe(urlBefore)));
             System.out.println("✓ Успешный переход на следующий шаг");
